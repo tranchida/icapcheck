@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -26,17 +25,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	scanFile, err := os.ReadFile(*file)
+	scanFile, err := os.Open(*file)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer scanFile.Close() 
+
+	stat, err := scanFile.Stat()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	/* preparing the http request required for the REQMOD */
-	httpReq, err := http.NewRequest(http.MethodPost, "http://localhost:8000/dummy", bytes.NewBuffer(scanFile))
+	httpReq, err := http.NewRequest(http.MethodPost, "http://localhost:8000/dummy", scanFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 	httpReq.Header.Set("Content-Type", "application/octet-stream")
+	httpReq.ContentLength = stat.Size()
 
 	/* making a icap request with REQMOD method */
 	req, err := ic.NewRequest(ic.MethodREQMOD, fmt.Sprintf("icap://%s/reqmod", *server), httpReq, nil)
@@ -44,7 +51,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	req.Header.Set("X-File-Name", *file)
+	req.Header.Set("X-File-Name", stat.Name())
 
 	if *debug {
 		dump, err := ic.DumpRequest(req)
