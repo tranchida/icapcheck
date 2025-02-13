@@ -15,11 +15,16 @@ import (
 
 func main() {
 
-	server := flag.String("server", "", "ICAP server address")
-	file := flag.String("file", "", "File to be scanned")
-	debug := flag.Bool("debug", false, "Enable debug mode")
+	server := flag.String("server", "", "ICAP server address (mandatory, format host:port)")
+	file := flag.String("file", "", "File to be scanned (mandatory)")
+	debug := flag.Bool("debug", false, "Enable debug mode (optional, default false)")
 
 	flag.Parse()
+
+	if *server == "" || *file == "" {
+		flag.CommandLine.Usage()
+		os.Exit(1)
+	}
 
 	scanFile, err := os.ReadFile(*file)
 	if err != nil {
@@ -66,7 +71,7 @@ func main() {
 	}
 
 	switch resp.StatusCode {
-		
+
 	case http.StatusNoContent:
 		fmt.Println("No virus found")
 	case http.StatusOK:
