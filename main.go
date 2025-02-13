@@ -35,6 +35,10 @@ func main() {
 
 	/* making a icap request with REQMOD method */
 	req, err := ic.NewRequest(ic.MethodREQMOD, fmt.Sprintf("icap://%s/reqmod", *server), httpReq, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	req.Header.Set("X-File-Name", *file)
 
 	if *debug {
@@ -45,10 +49,6 @@ func main() {
 		fmt.Println(string(dump))
 	}
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	/* making the icap client responsible for making the requests */
 	client := &ic.Client{
 		Timeout: 10 * time.Second,
@@ -56,22 +56,27 @@ func main() {
 
 	/* making the REQMOD request call */
 	resp, err := client.Do(req)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(resp.Status)
-	fmt.Println(resp.StatusCode)
+	if *debug {
+		fmt.Println(resp.Status)
+		fmt.Println(resp.StatusCode)
+	}
 
-	if resp.StatusCode == http.StatusNoContent {
+	switch resp.StatusCode {
+		
+	case http.StatusNoContent:
 		fmt.Println("No virus found")
-	} else {
+	case http.StatusOK:
 		fmt.Println("Virus found")
 		if *debug {
 			body, _ := io.ReadAll(resp.ContentResponse.Body)
 			fmt.Println(string(body))
 		}
-	}
+	default:
+		fmt.Printf("Unexpected response %d %s\n", resp.StatusCode, resp.Status)
 
+	}
 }
