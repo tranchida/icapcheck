@@ -1,4 +1,4 @@
-module icapcheck
+module github.com/tranchida/icapcheck
 
 go 1.23.6
 
